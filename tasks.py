@@ -1,8 +1,23 @@
-from dataclasses import dataclass
+from typing import Any, NotRequired, TypedDict
 
 import requests
 
 import celery_conf
+
+
+class APIError(TypedDict):
+    """A dictionary used for specifying possible errors in APIResponse dictionary."""
+
+    reason: str
+    status: NotRequired[int]
+
+
+class APIResponse(TypedDict):
+    """A dictionary used for specifying response from APIs."""
+
+    ok: bool
+    data: dict[str, Any] | APIError
+
 
 POKEAPI_BASE_URL = "https://pokeapi.co/api/v2"
 
