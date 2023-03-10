@@ -2,7 +2,7 @@
 name = "celery-proj"
 version = "0.1.0"
 description = ""
-authors = ["Suyash <suyash.d@netwebindia.com>"]
+authors = ["Suyash <suyashdayal@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
