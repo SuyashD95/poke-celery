@@ -26,8 +26,8 @@ def print_pokemon_summary(name: str):
     task_data = task_result.get()
     if task_data:
         print(
-            f"My name is {task_data['name']} and I am a(n) "
-            f"{task_data['primary_type']} type Pokemon. My base XP is "
+            f"My name is {task_data['name'].title()} and I am a "
+            f"{task_data['primary_type'].upper()} type Pokemon. My base XP is "
             f"{task_data['base_xp']}."
         )
     else:
