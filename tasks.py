@@ -1,4 +1,4 @@
-from typing import Any, NotRequired, TypedDict
+from typing import Any, NotRequired, Optional, TypedDict, cast
 
 import requests
 
@@ -17,6 +17,14 @@ class APIResponse(TypedDict):
 
     ok: bool
     data: dict[str, Any] | APIError
+
+
+class PokemonSummary(TypedDict):
+    """A dictionary containing following details about pokemon: name, base XP & primary type."""
+
+    name: str
+    base_xp: int
+    primary_type: str
 
 
 POKEAPI_BASE_URL = "https://pokeapi.co/api/v2"
@@ -48,4 +56,26 @@ def get_pokemon_details(name: str):
         return {
             "ok": False,
             "data": {"reason": "failed", "status": api_response.status_code},
+        }
+
+
+@celery_conf.app.task
+def extract_pokemon_summary(api_response: APIResponse) -> Optional[PokemonSummary]:
+    """This task extracts the name, primary type and base XP from the provided API response.
+
+    Parameters
+    ----------
+    api_response: JSON response received from API.
+
+    Returns
+    -------
+    A dictionary containing name, type and base experience of a pokemon whose data
+    was provided.
+    """
+    if api_response["ok"]:
+        json_data = cast(dict[str, Any], api_response["data"])
+        return {
+            "name": json_data["name"],
+            "base_xp": json_data["base_experience"],
+            "primary_type": json_data["types"][0]["type"]["name"],
         }
