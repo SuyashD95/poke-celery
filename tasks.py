@@ -1,6 +1,7 @@
-from typing import Any, NotRequired, Optional, TypedDict, cast
+from typing import Any, Optional, cast
 
 import requests
+from typing_extensions import NotRequired, TypedDict
 
 import celery_conf
 
