@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.10"
 celery = "^5.2.7"
 skylus-openstack-backend = {path = "/home/suyashd95/Projects/tcm-v2/tcm_backend_files/skylus-cloud-backend"}
+requests = "^2.28.2"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.11.0"
