@@ -1,9 +1,13 @@
-from typing import Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import requests
+from celery import chain, group
 from typing_extensions import NotRequired, TypedDict
 
 import celery_conf
+
+if TYPE_CHECKING:
+    from celery.result import AsyncResult
 
 
 class APIError(TypedDict):
@@ -80,3 +84,35 @@ def extract_pokemon_summary(api_response: APIResponse) -> Optional[PokemonSummar
             "base_xp": json_data["base_experience"],
             "primary_type": json_data["types"][0]["type"]["name"],
         }
+
+
+@celery_conf.app.task
+def stringify_pokemon_summary(name: str) -> Optional[str]:
+    """Returns a string representing summary about the given pokemon.
+
+    Parameters
+    ----------
+    name: Name of pokemon
+
+    Returns
+    -------
+    Returns a string containing a summary about specified pokemon.
+    If no pokemon is found with the given name, then it returns `None`.
+    """
+    pokemon_summary_flow = chain(
+        get_pokemon_details.s(name) | extract_pokemon_summary.s()
+    )
+    task_result: AsyncResult = pokemon_summary_flow.apply_async()
+
+    while not task_result.ready():
+        pass
+
+    task_data = task_result.get(disable_sync_subtasks=False)
+    if task_data:
+        return (
+            f"My name is {task_data['name'].title()} and I am a "
+            f"{task_data['primary_type'].upper()} type Pokemon. My base XP is "
+            f"{task_data['base_xp']}."
+        )
+    else:
+        print(f"Cannot retrive information about {name}.")
