@@ -1,38 +1,60 @@
 """The main file responsible for running invoking the tasks and the
 workflows around them.
 """
-from celery import chain
-from celery.result import AsyncResult
+from time import sleep
+
+from celery import chain, group
+from celery.result import AsyncResult, GroupResult
 
 import tasks
 
 
-def print_pokemon_summary(name: str):
-    """Prints summarized information about the given pokemon.
+def print_pokemon_summaries(names: list[str]):
+    """Print summarized information about the given pokemon
+    specified in the list.
 
     Parameters
     ----------
-    name: Name of pokemon
+    names: A list of pokemons.
     """
-    pokemon_summary_flow = chain(
-        tasks.get_pokemon_details.s(name) | tasks.extract_pokemon_summary.s()
-    )
-    task_result: AsyncResult = pokemon_summary_flow()
+    pkmn_summary_result: GroupResult = group(
+        [tasks.stringify_pokemon_summary.s(name=name) for name in names]
+    ).apply_async()
 
-    while not task_result.ready():
-        print("Task series is still in progress")
-    print("The series of tasks are now completed.")
-
-    task_data = task_result.get()
-    if task_data:
+    while not pkmn_summary_result.ready():
+        print("Task to get all pokemon summaries is still in progress.")
         print(
-            f"My name is {task_data['name'].title()} and I am a "
-            f"{task_data['primary_type'].upper()} type Pokemon. My base XP is "
-            f"{task_data['base_xp']}."
+            f"Currently, {pkmn_summary_result.completed_count()} out of {len(names)} tasks are completed.\n"
         )
-    else:
-        print(f"Cannot retrive information about {name}.")
+        sleep(1)
+
+    failed = 0
+    for index, result in enumerate(pkmn_summary_result.join()):
+        print(f"Pokemon Name: {names[index]}")
+        if result:
+            print(f"  {result}")
+        else:
+            print("  No information was found.")
+            failed += 1
+    print(
+        f"\nSummary: total = {len(names)}, succeeded = {len(names) - failed}, failed = {failed}"
+    )
 
 
 if __name__ == "__main__":
-    print_pokemon_summary("pikachu")
+    print_pokemon_summaries(
+        [
+            "pikachu",
+            "charizard",
+            "lucario",
+            "gengar",
+            "dragonite",
+            "sceptile",
+            "psyduck",
+            "blaziken",
+            "blastoise",
+            "onyx",
+            "piplup",
+            "mr-mime",
+        ]
+    )
